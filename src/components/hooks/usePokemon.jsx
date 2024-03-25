@@ -1,0 +1,45 @@
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import axios from 'axios';
+import { Link } from 'react-router-dom';
+import downloadPokemons from "../../utils/downloadPokemon";
+function usePokemon(pokemonName){
+    const {id}=useParams();
+    const POKEMON_DETAIL_URL="https://pokeapi.co/api/v2/pokemon/";
+    const [pokemon,setPokemon]= useState(null);
+    const [pokemonListState, setPokemonListState] = useState({
+        pokemonList: [],
+        pokedexUrl: '',
+        nextUrl: '',
+        previousUrl: ''
+    });
+    
+   async  function downloadGivenPokemon(id){
+        const response = await axios.get(POKEMON_DETAIL_URL+((pokemonName)? pokemonName:id));
+        const pokemon= response.data;
+        setPokemon({
+            name:pokemon.name,
+            height:pokemon.height,
+            weight:pokemon.weight,
+            types:pokemon.types,
+            image:pokemon.sprites.other.dream_world.front_default
+
+        })
+      const types=response.data.types.map(t=>t.type.name)
+      return types[0];
+    }
+    async function downloadPokemonAndRelated(id){
+        try {
+            const type= await downloadGivenPokemon(id);
+            await downloadPokemons(pokemonListState,setPokemonListState,`https://pokeapi.co/api/v2/type/${type}` )
+        } catch (error) {
+            console.log(error)
+        }
+    }
+    useEffect(()=>{
+        downloadPokemonAndRelated(id);
+window.scrollTo({top:0,left:0,behavior:'smooth'});
+    },[id,pokemonName]);
+    return [pokemon,pokemonListState];
+}
+export default usePokemon;
